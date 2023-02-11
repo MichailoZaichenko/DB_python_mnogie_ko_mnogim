@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, Text, Float, Date, String, select, desc, Connection, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, Text, Float, Date, String, select, desc, Connection, ForeignKey, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session, relationship, Mapped
  
@@ -82,8 +82,9 @@ with Session(engine) as session:
 #добавляем 3 строки в таблицу Teacher     
     teacher1 = Teacher(Name="James", Surname="Smith", Position="Lecturer", Salary=3000.00, EmploymentDate="2020-05-01", Premium=500.00, IsAssistant=0, IsProfessor=0 )    
     teacher2 = Teacher(Name="Michael", Surname="Johnson", Position="Associate Professor", Salary=5000.00, EmploymentDate="2020-06-01", Premium=1000.00 , IsAssistant=0 , IsProfessor=1 )     
-    teacher3 = Teacher ( Name="David" , Surname="Anderson" , Position="Assistant" , Salary = 2500.00 , EmploymentDate="2020-07-01" , Premium = 100.00, IsAssistant = 1, IsProfessor=1 )
-    session.add_all([teacher1, teacher2, teacher3])  
+    teacher3 = Teacher ( Name="David" , Surname="Anderson" , Position="Assistant" , Salary = 2500.00 , EmploymentDate="2020-07-01" , Premium = 100.00, IsAssistant = 1, IsProfessor=0 )
+    teacher4 = Teacher ( Name="Micha" , Surname="Yooer" , Position="Assistant" , Salary = 300.00 , EmploymentDate="2020-07-08" , Premium = 200000.00, IsAssistant = 1, IsProfessor=0 )
+    session.add_all([teacher1, teacher2, teacher3, teacher4])  
     session.commit() 
 
 # Добавляем данные в таблицу Group 
@@ -96,14 +97,21 @@ with Session(engine) as session:
 # Добавляем данные в таблицу Group_Teacher
 
     group_teacher1 = Group_Teacher(id_group = group_1.id, id_teacher = teacher1.id)
-    group_teacher2 = Group_Teacher(id_group = group_1.id, id_teacher = teacher1.id)
-    group_teacher3 = Group_Teacher(id_group = group_1.id, id_teacher = teacher1.id)   
-    session.add_all([ group_teacher1,  group_teacher2,  group_teacher3])  
+    group_teacher2 = Group_Teacher(id_group = group_2.id, id_teacher = teacher2.id)
+    group_teacher3 = Group_Teacher(id_group = group_3.id, id_teacher = teacher3.id)
+    group_teacher4 = Group_Teacher(id_group = group_1.id, id_teacher = teacher2.id)
+    group_teacher5 = Group_Teacher(id_group = group_1.id, id_teacher = teacher3.id)
+    group_teacher6 = Group_Teacher(id_group = group_2.id, id_teacher = teacher1.id)
+    group_teacher7 = Group_Teacher(id_group = group_2.id, id_teacher = teacher3.id)
+    group_teacher8 = Group_Teacher(id_group = group_3.id, id_teacher = teacher1.id)
+    group_teacher9 = Group_Teacher(id_group = group_3.id, id_teacher = teacher2.id)
+
+    session.add_all([ group_teacher1,  group_teacher2,  group_teacher3,  group_teacher4,  group_teacher5,  group_teacher6,  group_teacher7,  group_teacher8,  group_teacher9])  
     session.commit() 
 
 # Добавляем данные в таблицу Facultie
     faculty_1 = Facultie(Name='Mathematics Faculty', Dean='John Smith')
-    faculty_2 = Facultie(Name='Computer Science Faculty', Dean='Michael Johnson')
+    faculty_2 = Facultie(Name='Computer Science', Dean='Michael Johnson')
     faculty_3 = Facultie(Name='Physics Faculty', Dean='David Anderson')
     session.add_all([faculty_1, faculty_2, faculty_3])
     session.commit()
@@ -111,16 +119,50 @@ with Session(engine) as session:
 # Добавляем данные в таблицу Department
     department_1 = Department(id_faculty = faculty_1.id,Name='Mathematics', Financing=1000)
     department_2 = Department(id_faculty = faculty_3.id,Name='Computer Science', Financing=2000)
-    department_3 = Department(id_faculty = faculty_2.id,Name='Physics', Financing=3000)
-    session.add_all([department_1, department_2, department_3])
+    department_3 = Department(id_faculty = faculty_2.id,Name='Physics', Financing=12000)
+    department_4 = Department(id_faculty = faculty_2.id,Name='Ximich', Financing=27000)
+    department_5 = Department(id_faculty = faculty_1.id,Name='Literature', Financing=30000)
+    session.add_all([department_1, department_2, department_3, department_4, department_5])
     session.commit()  # сохраняем изменения в БД
-# with Session(engine) as session:
-#     session.query(Department).order_by(desc(Department.Name)).all()
-#     session.commit()
+with Session(engine) as session:
+#     1.  Вывести таблицу кафедр, но расположить ее поля в 
+# обратном порядке.
 
-    # print(s)
-    # result = Connection.execute(stmt)
-    # s = select([Group.c.group_name, Group.c.rating])
-    # s = select([Teacher.c.teacher_last_name, (Teacher.c.allowance/Teacher.c.salary)*100].label("allowance_percentage"), (Teacher.c.rate/Teacher.c salary)*100).label("rate_percentage"))
-    # s = select([Teacher]).where(and_(Teacher .c .professor == 1, Teacher .c .rate > 1050))
-    # s = select([Department]).where(or_(Department .c .funding < 11000, Department .c .funding > 25000))
+    request1 = session.query(Department).order_by(Department.Name.desc()).all()
+    session.commit()
+    print(request1)
+
+# 2. Вывести названия групп и их рейтинги с уточнением имен полей именем таблицы.
+
+    request2 = session.query(Group.Name, Group.Rating).all()
+    print(request2)
+
+# 3. Вывести для преподавателей их фамилию, процент ставки по отношению к надбавке и процент ставки по отношению к зарплате (сумма ставки и надбавки).
+
+    request3 = session.query(Teacher.Surname, (Teacher.Premium/Teacher.Salary)*100).all()
+    print(request3)
+
+# 4. Вывести таблицу факультетов в виде одного поля в следующем  формате:  “The  dean  of  faculty  [faculty]  is  [dean].”.
+
+    request4 = session.query(Facultie.Name, Facultie.Dean).all()
+    print(request4)
+
+# 5. Вывести фамилии преподавателей, которые являются профессорами и ставка которых превышает 1050.
+
+    request5 = session.query(Teacher.Surname).filter(Teacher.IsProfessor == 1).filter(Teacher.Salary > 1050).all()
+    print(request5)
+
+# 6. Вывести  названия  кафедр,  фонд  финансирования которых меньше 11000 или больше 25000.
+
+    request6 = session.query(Department.Name).filter(or_(Department.Financing < 11000,  Department.Financing > 25000)).all()
+    print(request6)
+
+# 7.   Вывести  названия  факультетов  кроме  факультета “Computer Science”.
+    
+    request7 = session.query(Facultie.Name).filter(Facultie.Name != 'Computer Science').all()
+    print(request7)
+
+# 15. Вывести фамилии ассистентов со ставкой меньше 550  или надбавкой меньше 200.
+
+    request8 = session.query(Teacher.Surname).filter(Teacher.IsAssistant == 1).filter(or_(Teacher.Salary < 550, Teacher.Premium < 200)).all()
+    print(request8)
